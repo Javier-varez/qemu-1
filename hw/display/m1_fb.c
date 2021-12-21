@@ -1,8 +1,8 @@
 /*
  * Apple M1 SoC Framebuffer Emulation
- * 
+ *
  * Copyright (c) 2021 Iris Johnson <iris@modwiz.com>
- * 
+ *
  * SPDX-License-Identifier: MIT
  */
 
@@ -40,11 +40,11 @@ static void fb_draw_row(void *opaque, uint8_t *dest, const uint8_t *src,
         color = rgb30_to_xrgb32(color);
         /* Increment source pointer */
         src += 4;
-        
+
         /* Blit it to the display output now that it's converted */
         /* FIXME this might not be endian-safe but the rest should be */
         memcpy(dest, &color, sizeof(color));
-        /* 
+        /*
          * NOTE: We always assume that pixels are packed end to end so we
          * ignore dest_pitch
          */
@@ -66,10 +66,10 @@ static void fb_gfx_update(void *opaque)
     int height = s->height;
     int src_stride = width*4; /* Bytes per line is 4*pixels */
     int dest_stride = src_stride; /* Same number of bytes per line */
-    
-    /* 
+
+    /*
      * This helper is used to reinitialize the dirty section.
-     * 
+     *
      * This is only done if the section hasn't been initialized since the memory
      * region itself is never changed.
      */
@@ -77,19 +77,19 @@ static void fb_gfx_update(void *opaque)
      * vram_section isn't a pointer. We should just handle invalidate properly
      */
     if (s->vram_section.mr == NULL) {
-        framebuffer_update_memory_section(&s->vram_section, s->vram, 0, 
+        framebuffer_update_memory_section(&s->vram_section, s->vram, 0,
                                         height, src_stride);
     }
-    
+
     /*
      * Update the display memory that's changed using fb_draw_row to convert
      * between the source and destination pixel formats
      */
-    framebuffer_update_display(surface, &s->vram_section, 
+    framebuffer_update_display(surface, &s->vram_section,
                                width, height,
-                               src_stride, dest_stride, 0, 0, 
+                               src_stride, dest_stride, 0, 0,
                                fb_draw_row, s, &first_row, &last_row);
-    
+
     /* If anything changed update that region of the display */
     if (first_row >= 0) {
         /* # of rows that were updated, including row 1 (offset 0) */
@@ -116,15 +116,15 @@ static void m1_fb_realize(DeviceState *dev, Error **errp)
     printf("Qemu FB realize\n");
     M1FBState *s = M1_FB(dev);
     Object *obj;
-    
-    /* 
+
+    /*
      * FIXME: This probably should have an AddressSpace since I'm sure it's
      * passed through a DART, TODO for when DART support is added and more
      * is understood about where the framebuffer in the M1 comes from at all
      */
     obj = object_property_get_link(OBJECT(dev), "vram", &error_abort);
     s->vram = MEMORY_REGION(obj);
-    
+
     s->console = graphic_console_init(dev, 0, &m1_fb_ops, s);
     qemu_console_resize(s->console, s->width, s->height);
 }
@@ -141,12 +141,12 @@ static const VMStateDescription vmstate_m1_fb = {
 };
 
 static Property m1_fb_props[] = {
-    DEFINE_PROP_UINT32("width", M1FBState, width, 1280),
-    DEFINE_PROP_UINT32("height", M1FBState, height, 800),
+    DEFINE_PROP_UINT32("width", M1FBState, width, 3024),
+    DEFINE_PROP_UINT32("height", M1FBState, height, 1964),
     DEFINE_PROP_END_OF_LIST()
 };
 
-static void m1_fb_class_init(ObjectClass *oc, void *data) { 
+static void m1_fb_class_init(ObjectClass *oc, void *data) {
     DeviceClass *dc = DEVICE_CLASS(oc);
 
     set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);

@@ -30,7 +30,6 @@
 #include "qapi/visitor.h"
 #include "hw/qdev-properties.h"
 
-
 #ifndef CONFIG_USER_ONLY
 static uint64_t a57_a53_l2ctlr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
@@ -346,7 +345,7 @@ static void apple_firestorm_initfn(Object *obj)
     aarch64_a72_initfn(obj);
     // FIXME: Figure out where 32 bit compat is defined and disable since these
     // cores don't actually have that feature
-    
+
     ARMCPU *cpu = ARM_CPU(obj);
 
     /* FIXME: I think Linux is going to go with apple,firestorm */
@@ -356,11 +355,11 @@ static void apple_firestorm_initfn(Object *obj)
      * downgraded to EL2 */
     unset_feature(&cpu->env, ARM_FEATURE_EL3);
     /* XXX: Changed to match M1 stuff */
-    /* Implementer is Apple, varient is 0, arch is 
+    /* Implementer is Apple, varient is 0, arch is
      * elsewhere part is firestorm */
     cpu->midr = 0x610F0230;
     /* TODO: Figure out what these bits do! */
-    cpu->isar.id_aa64mmfr0 = 0x12120f100001;
+    cpu->isar.id_aa64mmfr0 = 0x12120f100003;
     cpu->isar.id_aa64mmfr1 = 0x11212100; /* Enable VH bits for M1, this controls QEMU */
     cpu->isar.id_aa64mmfr2 = 0x1201111100001011;
     cpu->isar.dbgdidr = 0x3516d000;
@@ -377,7 +376,6 @@ static void apple_firestorm_initfn(Object *obj)
     define_arm_cp_regs(cpu, apple_t8103_cp_reginfo);
     define_arm_cp_regs(cpu, apple_firestorm_cp_reginfo);
 }
-
 
 static const ARMCPRegInfo apple_icestorm_cp_reginfo[] = {
     { .name = "ICESTORM_MISC1", .state = ARM_CP_STATE_AA64,
@@ -401,7 +399,7 @@ static void apple_icestorm_initfn(Object *obj)
     // change
     // TODO: This is bad because we get the firestorm cp registers too...
     apple_firestorm_initfn(obj);
-    /* Implementer is Apple, varient is 0, arch is 
+    /* Implementer is Apple, varient is 0, arch is
      * elsewhere part is icestorm */
     ARMCPU *cpu = ARM_CPU(obj);
     cpu->midr = 0x610F0220;
