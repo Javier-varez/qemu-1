@@ -498,6 +498,8 @@ static int load_blob_aligned(const char *name, const void *blob, hwaddr* offset,
     return size;
 }
 
+extern const unsigned char j314_dt[];
+extern const unsigned int j314_dt_len;
 // This builds an apple style device tree then inserts it into memory somewhere,
 // TODO: Make this a lot nicer (model after the virt platform fdt builders)
 // it should be dynamic (ideally we would take an existing device tree from
@@ -507,8 +509,6 @@ static int load_blob_aligned(const char *name, const void *blob, hwaddr* offset,
 static int init_apple_dt(hwaddr *adt_base) {
     // TODO: Use the new ADT code to construct this somewhat dynamically at least
     // TODO: After the above is done we should load this from a file or something
-    extern const unsigned char j314_dt[];
-    extern const unsigned int j314_dt_len;
     return load_blob_aligned("device-tree", &j314_dt, adt_base, 8, j314_dt_len);
 }
 
@@ -784,7 +784,7 @@ static void m1_mac_machine_init(MachineClass *mc)
     mc->no_cdrom = 1;
     mc->no_parallel = 1;
     mc->default_ram_id = "ram";
-    mc->default_ram_size = 32 * GiB;
+    mc->default_ram_size = 8 * GiB;
     mc->desc = "Apple M1 Mac Mini";
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("apple-icestorm");
     mc->block_default_type = IF_SD;
