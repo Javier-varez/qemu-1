@@ -2,9 +2,7 @@ name: Qemu
 
 on:
   push:
-    branches: [ add_M1_test ]
-  pull_request:
-    branches: [ add_M1_test ]
+    tags: [ 'Apple_M1_*' ]
 
 jobs:
   build:
@@ -25,3 +23,9 @@ jobs:
         ../configure --prefix=$RELEASE_FOLDER
         make
         make install
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: qemu build
+        path: |
+          release
