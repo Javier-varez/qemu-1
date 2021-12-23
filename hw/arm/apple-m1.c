@@ -98,6 +98,38 @@ static const struct MemMapEntry memmap[] = {
     [M1_MEM] =              { 0x10000000000,     RAMLIMIT_BYTES},
 };
 
+#define MACH_O_MAGIC (0xfeedfacf)
+
+enum mach_o_command_type {
+  LC_UNIXTHREAD = 0x5,
+  LC_SEGMENT_64 = 0x19,
+};
+
+struct mach_o_header {
+  uint32_t magic;
+  uint32_t cpu_type;
+  uint32_t cpu_subtype;
+  uint32_t file_type;
+  uint32_t n_cmds;
+  uint32_t sizeof_cmds;
+  uint32_t flags;
+  uint32_t reserved;
+};
+
+struct mach_o_command_header {
+  uint32_t type;
+  uint32_t command_size;
+};
+
+struct mach_o_unix_thread_command {
+  struct mach_o_command_header header;
+  uint32_t flavour;
+  uint32_t count;
+  uint64_t unused_registers_1[32];
+  uint64_t pc;
+  uint64_t unused_registers_2;
+};
+
 /* Helper function to convert cpu_index to ARMCPU* pointer from complex */
 /* TODO: This feels messy and horrible..., maybe they can be stored together
  * and then downcast into the correct type once we seperate those?
@@ -456,6 +488,67 @@ static void apple_m1_register_types(void)
 
 type_init(apple_m1_register_types);
 
+static int validate_mach_o_file(const char* filename, uint64_t* entrypoint) {
+  if (entrypoint == NULL) {
+    error_report("Invalid entrypoint, cannot be NULL\n");
+    return -1;
+  }
+
+  Error* error;
+  int fd = qemu_open(filename, O_RDONLY | O_BINARY | O_LARGEFILE, &error);
+  if (fd < 0) {
+    error_report("Error opening file: %s\n", filename);
+    return -1;
+  }
+
+  struct mach_o_header header;
+  int rbytes = read(fd, &header, sizeof(header));
+  if (rbytes != sizeof(header)) {
+    error_report("Error reading the header for Mach-O file: %s\n", filename);
+    qemu_close(fd);
+    return -1;
+  }
+
+  if (header.magic != MACH_O_MAGIC) {
+    error_report("File is not a Mach-O binary: 0x%x\n", header.magic);
+    qemu_close(fd);
+    return 1;
+  }
+
+  // Read commands
+  uint8_t* command_buffer = malloc(header.sizeof_cmds);
+  g_assert(command_buffer != NULL);
+  rbytes = read(fd, command_buffer, header.sizeof_cmds);
+  if (rbytes != header.sizeof_cmds) {
+    qemu_log("Error reading commands for Mach-O file: %s\n", filename);
+    qemu_close(fd);
+    free(command_buffer);
+    return -1;
+  }
+
+  qemu_close(fd);
+
+  // Find an entry point
+  size_t command_offset = 0;
+  for (uint32_t command = 0; command < header.n_cmds; command++) {
+    struct mach_o_command_header* command_header =
+      (struct mach_o_command_header*)&command_buffer[command_offset];
+    if (command_header->type == LC_UNIXTHREAD) {
+      struct mach_o_unix_thread_command* entry_point_cmd =
+        (struct mach_o_unix_thread_command*)command_header;
+      *entrypoint = entry_point_cmd->pc;
+      qemu_log("Entrypoint is 0x%" PRIX64 "\n", *entrypoint);
+      break;
+    }
+
+    // Done with this command
+    command_offset += command_header->command_size;
+  }
+
+  free(command_buffer);
+  return 0;
+}
+
 /*
  * Helper method to insert a flat image from a file into memory with a given alignment
  * Offset is updated after load to the next unused address
@@ -701,14 +794,18 @@ static void m1_mac_init(MachineState *machine)
      * helper code which *does* work well with platforms that don't want to
      * have reset handled (unlike the ARM booter functions) */
     if (machine->firmware) {
-        /* Align firmware to a 16K page */
-        int result = load_image_aligned(machine->firmware, &offset, 65536, remaining_mem);
+        uint64_t entrypoint = 0;
+        int result = validate_mach_o_file(machine->firmware, &entrypoint);
         if (result < 0) {
-            error_report("Failed to load firmware from %s", machine->firmware);
+          error_report("Firmware file is not a valid Mach-O file: %s\n", machine->firmware);
+        }
+        /* Align firmware to a 16K page */
+        result = load_image_aligned(machine->firmware, &offset, 65536, remaining_mem);
+        if (result < 0) {
+            error_report("Failed to load firmware from %s\n", machine->firmware);
             exit(1);
         }
-    	// HACK: Total hack to hardcode entry offset of m1n1 for post reset
-        m1->entry_addr = offset - result + 0x4000;
+        m1->entry_addr = offset - result + entrypoint;
         printf("Entry addr computed was: 0x%" HWADDR_PRIx "\n", m1->entry_addr);
         remaining_mem -= result;
     }
