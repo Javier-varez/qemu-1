@@ -121,6 +121,19 @@ struct mach_o_command_header {
   uint32_t command_size;
 };
 
+struct mach_o_segment_command {
+  struct mach_o_command_header header;
+  char name[16];
+  uint64_t vmaddr;
+  uint64_t vmsize;
+  uint64_t file_offset;
+  uint64_t file_size;
+  uint32_t max_prot;
+  uint32_t init_prot;
+  uint32_t num_sectors;
+  uint32_t flags;
+};
+
 struct mach_o_unix_thread_command {
   struct mach_o_command_header header;
   uint32_t flavour;
@@ -488,6 +501,39 @@ static void apple_m1_register_types(void)
 
 type_init(apple_m1_register_types);
 
+static int mach_o_translate_vaddr_to_file_offset(const uint8_t* const command_data,
+                                                 const size_t n_cmds,
+                                                 const uint64_t vmaddr,
+                                                 uint64_t* const file_addr) {
+  if (file_addr == NULL) {
+    error_report("File addr should not be NULL\n");
+    return -1;
+  }
+
+  // Find an entry point
+  size_t command_offset = 0;
+  for (uint32_t command = 0; command < n_cmds; command++) {
+    const struct mach_o_command_header* command_header =
+      (const struct mach_o_command_header*)&command_data[command_offset];
+    if (command_header->type == LC_SEGMENT_64) {
+      const struct mach_o_segment_command* segment_cmd =
+        (const struct mach_o_segment_command*)command_header;
+      if ((vmaddr >= segment_cmd->vmaddr) &&
+          (vmaddr < (segment_cmd->vmaddr + segment_cmd->vmsize))) {
+        qemu_log("Translating vmaddr 0x%" PRIx64 " from segment %s at vmaddr 0x%"PRIx64".\n",
+            vmaddr, segment_cmd->name, segment_cmd->vmaddr);
+        *file_addr = vmaddr - segment_cmd->vmaddr + segment_cmd->file_offset;
+        return 0;
+      }
+    }
+
+    // Done with this command
+    command_offset += command_header->command_size;
+  }
+
+  return -1;
+}
+
 static int validate_mach_o_file(const char* filename, uint64_t* entrypoint) {
   if (entrypoint == NULL) {
     error_report("Invalid entrypoint, cannot be NULL\n");
@@ -536,8 +582,10 @@ static int validate_mach_o_file(const char* filename, uint64_t* entrypoint) {
     if (command_header->type == LC_UNIXTHREAD) {
       struct mach_o_unix_thread_command* entry_point_cmd =
         (struct mach_o_unix_thread_command*)command_header;
-      *entrypoint = entry_point_cmd->pc;
-      qemu_log("Entrypoint is 0x%" PRIX64 "\n", *entrypoint);
+      uint64_t vmaddr = entry_point_cmd->pc;
+      qemu_log("vmaddr entrypoint is 0x%" PRIx64 "\n", vmaddr);
+      mach_o_translate_vaddr_to_file_offset(command_buffer, header.n_cmds, vmaddr, entrypoint);
+      qemu_log("translated entrypoint is 0x%" PRIx64 "\n", *entrypoint);
       break;
     }
 
