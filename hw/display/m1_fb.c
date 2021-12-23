@@ -141,8 +141,8 @@ static const VMStateDescription vmstate_m1_fb = {
 };
 
 static Property m1_fb_props[] = {
-    DEFINE_PROP_UINT32("width", M1FBState, width, 3024),
-    DEFINE_PROP_UINT32("height", M1FBState, height, 1964),
+    DEFINE_PROP_UINT32("width", M1FBState, width, 1280),
+    DEFINE_PROP_UINT32("height", M1FBState, height, 720),
     DEFINE_PROP_END_OF_LIST()
 };
 

@@ -659,7 +659,7 @@ static void initialize_boot_args(AppleM1State *s, hwaddr phys_mem_base, hwaddr m
     boot_args.fb_width = cpu_to_le64(s->fb.width);
     boot_args.fb_height = cpu_to_le64(s->fb.height);
     /* TODO: Find out what this is in the real world*/
-    boot_args.fb_depth = cpu_to_le64(30 | 1 << 16);
+    boot_args.fb_depth = cpu_to_le64(30);
 
     boot_args.adt_base = cpu_to_le64(adt_base-phys_mem_base+0xfffffe0010000000);
     boot_args.adt_size = cpu_to_le64(adt_size);
