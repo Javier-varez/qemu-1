@@ -20,7 +20,7 @@ jobs:
         mkdir release
         export RELEASE_FOLDER=$PWD/release
         cd build
-        ../configure --prefix=$RELEASE_FOLDER
+        ../configure --prefix=$RELEASE_FOLDER --target-list=aarch64-softmmu
         make
         make install
     - name: Archive production artifacts
