@@ -90,7 +90,7 @@ static int qemu_mprotect__osdep(void *addr, size_t size, int prot)
     return 0;
 #else
     if (mprotect(addr, size, prot)) {
-        error_report("%s: mprotect failed: %s", __func__, strerror(errno));
+        /* error_report("%s: mprotect failed: %s", __func__, strerror(errno)); */
         return -1;
     }
     return 0;
