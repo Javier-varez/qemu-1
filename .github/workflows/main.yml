@@ -6,13 +6,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install dependencies
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: sudo apt install -y ninja-build
+    - name: Install dependencies (macOS)
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: brew install ninja glib pkg-config pixman gettext autoconf automake libffi
     - name: Build
       run: |
         set -ex
