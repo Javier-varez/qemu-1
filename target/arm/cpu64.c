@@ -881,7 +881,7 @@ static void apple_firestorm_initfn(Object *obj)
     /* XXX: Changed to match M1 stuff */
     /* Implementer is Apple, varient is 0, arch is
      * elsewhere part is firestorm */
-    cpu->midr = 0x610F0230;
+    cpu->midr = 0x610F0250;
     /* TODO: Figure out what these bits do! */
     cpu->isar.id_aa64mmfr0 = 0x12120f100003;
     cpu->isar.id_aa64mmfr1 = 0x11212100; /* Enable VH bits for M1, this controls QEMU */
@@ -912,7 +912,7 @@ static void apple_icestorm_initfn(Object *obj)
     /* Implementer is Apple, varient is 0, arch is
      * elsewhere part is icestorm */
     ARMCPU *cpu = ARM_CPU(obj);
-    cpu->midr = 0x610F0220;
+    cpu->midr = 0x610F0240;
     /* FIXME: I think Linux is going to go with apple,icestorm */
     cpu->dtb_compatible = "AAPL,icestorm";
 }
