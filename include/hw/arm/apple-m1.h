@@ -12,7 +12,7 @@
 #include "qom/object.h"
 #include "target/arm/cpu.h"
 #include "hw/display/m1_fb.h"
-#include "hw/intc/apple-aic.h"
+#include "hw/intc/apple-aic2.h"
 
 // The M1 has a fixed number of cores, model that
 /* TODO: This seems more messy as time goes on... */
@@ -44,7 +44,7 @@ struct AppleM1State {
 
     /* SoC devices */
     M1FBState fb;
-    AppleAICState aic;
+    AppleAIC2State aic;
     
     /* SoC memory regions */
     /* TODO: VRAM is actually a part of system RAM but we need to tell the FB code

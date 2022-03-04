@@ -279,7 +279,7 @@ static void apple_m1_init(Object *obj) {
     /* Initialize framebuffer */
     object_initialize_child(obj, "fb", &s->fb, TYPE_M1_FB);
     // Initialize interrupt controller
-    object_initialize_child(obj, "aic", &s->aic, TYPE_APPLE_AIC);
+    object_initialize_child(obj, "aic", &s->aic, TYPE_APPLE_AIC2);
 }
 
 // Apple M1 reset needs us to put the correct x0 register to point to our boot args
