@@ -211,7 +211,7 @@ static void m1_pmgr_write(void *opaque, hwaddr offset, uint64_t val, unsigned si
             if (value & (1<<i)) {
                 ARMCPU *cpu = &s->icestorm_cores[i];
                 if (cpu->power_state == PSCI_OFF) {
-                    qemu_log("Starting ICESTORM core #%u\n", i);
+                    qemu_log_mask(LOG_UNIMP, "Starting ICESTORM core #%u\n", i);
                     arm_set_cpu_on_and_reset(cpu->mp_affinity);
                 }
                 //qemu_log("Power state was: %#x\n", s->icestorm_cores[i].power_state);
@@ -221,12 +221,12 @@ static void m1_pmgr_write(void *opaque, hwaddr offset, uint64_t val, unsigned si
         break;
     case 0xC:
         /* This is where we startup one of the performance cores */
-        qemu_log("Performance core startup: %#x\n", value);
+        qemu_log_mask(LOG_UNIMP, "Performance core startup: %#x\n", value);
         for (int i = ctz32(value); i < APPLE_M1_FIRESTORM_CPUS; i++) {
             if (value & (1<<i)) {
                 ARMCPU *cpu = &s->firestorm_cores[i];
                 if (cpu->power_state == PSCI_OFF) {
-                    qemu_log("Starting FIRESTORM core #%u\n", i);
+                    qemu_log_mask(LOG_UNIMP, "Starting FIRESTORM core #%u\n", i);
                     arm_set_cpu_on_and_reset(cpu->mp_affinity);
                 }
                 //qemu_log("Power state was: %#x\n", s->firestorm_cores[i].power_state);
@@ -299,7 +299,7 @@ static void handle_m1_reset(void *opaque)
     cpu->env.xregs[0] = s->boot_args_base;
     /* TODO: is cpu_set_pc better than trying to set directly via ARMCPU? */
     /* Set the entry point for post-reset as was determined from firmware */
-    printf("Entry addr was: 0x%" HWADDR_PRIx "\n", s->entry_addr);
+    qemu_log_mask(LOG_UNIMP, "Entry addr was: 0x%" HWADDR_PRIx "\n", s->entry_addr);
     cpu_set_pc(CPU(cpu), s->entry_addr);
 
     /* Set the initial register state to match the hardware.
@@ -520,7 +520,7 @@ static int mach_o_translate_vaddr_to_file_offset(const uint8_t* const command_da
         (const struct mach_o_segment_command*)command_header;
       if ((vmaddr >= segment_cmd->vmaddr) &&
           (vmaddr < (segment_cmd->vmaddr + segment_cmd->vmsize))) {
-        qemu_log("Translating vmaddr 0x%" PRIx64 " from segment %s at vmaddr 0x%"PRIx64".\n",
+        qemu_log_mask(LOG_UNIMP, "Translating vmaddr 0x%" PRIx64 " from segment %s at vmaddr 0x%"PRIx64".\n",
             vmaddr, segment_cmd->name, segment_cmd->vmaddr);
         *file_addr = vmaddr - segment_cmd->vmaddr + segment_cmd->file_offset;
         return 0;
@@ -566,7 +566,7 @@ static int validate_mach_o_file(const char* filename, uint64_t* entrypoint) {
   g_assert(command_buffer != NULL);
   rbytes = read(fd, command_buffer, header.sizeof_cmds);
   if (rbytes != header.sizeof_cmds) {
-    qemu_log("Error reading commands for Mach-O file: %s\n", filename);
+    qemu_log_mask(LOG_UNIMP, "Error reading commands for Mach-O file: %s\n", filename);
     qemu_close(fd);
     free(command_buffer);
     return -1;
@@ -583,9 +583,9 @@ static int validate_mach_o_file(const char* filename, uint64_t* entrypoint) {
       struct mach_o_unix_thread_command* entry_point_cmd =
         (struct mach_o_unix_thread_command*)command_header;
       uint64_t vmaddr = entry_point_cmd->pc;
-      qemu_log("vmaddr entrypoint is 0x%" PRIx64 "\n", vmaddr);
+      qemu_log_mask(LOG_UNIMP, "vmaddr entrypoint is 0x%" PRIx64 "\n", vmaddr);
       mach_o_translate_vaddr_to_file_offset(command_buffer, header.n_cmds, vmaddr, entrypoint);
-      qemu_log("translated entrypoint is 0x%" PRIx64 "\n", *entrypoint);
+      qemu_log_mask(LOG_UNIMP, "translated entrypoint is 0x%" PRIx64 "\n", *entrypoint);
       break;
     }
 
@@ -612,7 +612,7 @@ static int load_image_aligned(const char *filename, hwaddr* offset, uint64_t ali
         return r;
     }
 
-    printf("Loaded file %s (size 0x%x) at RAM offset 0x%" HWADDR_PRIx "\n", filename, r, aligned_offset);
+    qemu_log_mask(LOG_UNIMP, "Loaded file %s (size 0x%x) at RAM offset 0x%" HWADDR_PRIx "\n", filename, r, aligned_offset);
 
     /* Update offset to be next address after written */
     *offset = aligned_offset + r;
@@ -632,7 +632,7 @@ static int load_blob_aligned(const char *name, const void *blob, hwaddr* offset,
     /* It returns a NULL MemoryRegion* when we don't use fw_cfg */
     (void) rom_add_blob(name, blob, size, size, aligned_offset, NULL, NULL, NULL, NULL, false);
 
-    printf("Loaded blob %s (size 0x%" PRIx64 ") at RAM offset 0x%" HWADDR_PRIx "\n", name, size, aligned_offset);
+    qemu_log_mask(LOG_UNIMP, "Loaded blob %s (size 0x%" PRIx64 ") at RAM offset 0x%" HWADDR_PRIx "\n", name, size, aligned_offset);
 
     /* Update offset to be next address after written */
     *offset = aligned_offset + size;
@@ -826,7 +826,7 @@ static void m1_mac_init(MachineState *machine)
      * but not quite.
      */
     hwaddr offset = phys_base;
-    printf("phys_base: 0x%" HWADDR_PRIx "\n", phys_base);
+    qemu_log_mask(LOG_UNIMP, "phys_base: 0x%" HWADDR_PRIx "\n", phys_base);
     hwaddr remaining_mem = machine->ram_size - VRAM_ZONE_SIZE;
 
     /*
@@ -854,7 +854,7 @@ static void m1_mac_init(MachineState *machine)
             exit(1);
         }
         m1->entry_addr = offset - result + entrypoint;
-        printf("Entry addr computed was: 0x%" HWADDR_PRIx "\n", m1->entry_addr);
+        qemu_log_mask(LOG_UNIMP, "Entry addr computed was: 0x%" HWADDR_PRIx "\n", m1->entry_addr);
         remaining_mem -= result;
     }
 

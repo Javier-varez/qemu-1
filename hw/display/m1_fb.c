@@ -15,6 +15,7 @@
 #include "ui/console.h"
 #include "qapi/error.h"
 #include "framebuffer.h"
+#include "qemu/log.h"
 
 /**
  * rgb30_to_xrgb32: return a color converted from 10 bit XRGB to 8 bit XRGB
@@ -103,7 +104,7 @@ static void fb_invalidate(void *opaque)
     /* FIXME: adding invalidate support for changing display parameters when
     * this is implemented
     */
-    printf("FB invalidate called\n");
+    qemu_log_mask(LOG_UNIMP, "FB invalidate called\n");
 }
 
 static const GraphicHwOps m1_fb_ops = {
@@ -113,7 +114,7 @@ static const GraphicHwOps m1_fb_ops = {
 
 static void m1_fb_realize(DeviceState *dev, Error **errp)
 {
-    printf("Qemu FB realize\n");
+    qemu_log_mask(LOG_UNIMP, "Qemu FB realize\n");
     M1FBState *s = M1_FB(dev);
     Object *obj;
 
