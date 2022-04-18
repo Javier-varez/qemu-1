@@ -937,7 +937,7 @@ static void m1_mac_machine_init(MachineClass *mc)
     mc->no_parallel = 1;
     mc->default_ram_id = "ram";
     mc->default_ram_size = 8 * GiB;
-    mc->desc = "Apple M1 Mac Mini";
+    mc->desc = "Apple M1 Pro Macbook Pro 14\"";
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("apple-icestorm");
     mc->block_default_type = IF_SD;
     mc->min_cpus = 8;
