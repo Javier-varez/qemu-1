@@ -78,6 +78,7 @@ enum {
     M1_WDT,         // The M1 Watchdog timer. This is probably actually part of the AIC
     M1_ARGS,        // A bit of ROM to hold the bootargs
     M1_PMGR,        // Peripheral used to set cores to on (and theoretically off) along with giving them a reset vector address to start at
+    M1_VIRTIO_MMIO
 };
 // This is used in several other ARM platforms to help collect the addresses and give them meaningful names
 // during realization. These aren't correlated to the M1 hardware at all though it's just easier to set
@@ -95,7 +96,8 @@ static const struct MemMapEntry memmap[] = {
     /* TODO: replace this with a real addr from hardware */
     [M1_PMGR] =             { 0x28e080000,                0x100},
     /* NOTE: This contains VRAM as well given the UMA config of the M1 */
-    [M1_MEM] =              { 0x10000000000,     RAMLIMIT_BYTES},
+    [M1_MEM] =              { 0x10000000000,           RAMLIMIT_BYTES},
+    [M1_VIRTIO_MMIO] =      { 0x29D000000,                0x200},
 };
 
 #define MACH_O_MAGIC (0xfeedfacf)
@@ -474,6 +476,11 @@ static void apple_m1_realize(DeviceState *dev, Error **errp)
                           memmap[M1_PMGR].size);
     memory_region_add_subregion(get_system_memory(), memmap[M1_PMGR].base,
                                 pmgr_mr);
+
+    // TODO(javier-varez): Fix irq number
+    hwaddr base = memmap[M1_VIRTIO_MMIO].base;
+    sysbus_create_simple("virtio-mmio", base,
+                         qdev_get_gpio_in(DEVICE(&s->aic), 0));
 }
 
 static void apple_m1_class_init(ObjectClass *oc, void *data) {
