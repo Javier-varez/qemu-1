@@ -926,6 +926,12 @@ static void m1_mac_init(MachineState *machine)
     */
 }
 
+GlobalProperty hw_compat[] = {
+    { "virtio-mmio", "force-legacy", "false"},
+};
+
+const size_t hw_compat_len = G_N_ELEMENTS(hw_compat);
+
 static void m1_mac_machine_init(MachineClass *mc)
 {
     /* TODO: These constants and things should be specified more realistically
@@ -943,6 +949,7 @@ static void m1_mac_machine_init(MachineClass *mc)
     mc->min_cpus = 8;
     mc->max_cpus = 8;
     mc->default_cpus = 8;
+    compat_props_add(mc->compat_props, hw_compat, hw_compat_len);
 }
 
 // TODO: Change this when docs can be changed
